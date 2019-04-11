@@ -196,12 +196,18 @@
         var STATE_LEFT_SIDE = 2;
         var STATE_RIGHT_SIDE = 3;
 
+        var STATE_VERTICAL_DEFAULT = 1;
+        var STATE_VERTICAL_TOP = 2;
+        var STATE_VERTICAL_BOTTOM = 3;
+
         var swipeFrontElement = element.querySelector('.swipe-front');
         var rafPending = false;
         var initialTouchPos = null;
         var lastTouchPos = null;
         var currentXPosition = 0;
+        var currentYPosition = 0;
         var currentState = STATE_DEFAULT;
+        var currentVerticalState = STATE_VERTICAL_DEFAULT;
         var handleSize = 10;
 
         // Perform client width here as this can be expensive and doens't
@@ -364,9 +370,11 @@
           }
 
           var differenceInX = initialTouchPos.x - lastTouchPos.x;
+          var differenceInY = initialTouchPos.y - lastTouchPos.y;
 
           var newXTransform = (currentXPosition - differenceInX)+'px';
-          var transformStyle = 'translateX('+newXTransform+')';
+          var newYTransform = (currentYPosition - differenceInY) + 'px';
+          var transformStyle = 'translate('+newXTransform+',' +newYTransform+')';
           swipeFrontElement.style.webkitTransform = transformStyle;
           swipeFrontElement.style.MozTransform = transformStyle;
           swipeFrontElement.style.msTransform = transformStyle;
