@@ -213,12 +213,17 @@
         // Perform client width here as this can be expensive and doens't
         // change until window.onresize
         var itemWidth = swipeFrontElement.clientWidth;
+        var itemHeight = swipeFrontElement.clientHeight;
         var slopValue = itemWidth * (1/4);
+        var slopVerticalValue = itemHeight * (1/4);
+
 
         // On resize, change the slop value
         this.resize = function() {
           itemWidth = swipeFrontElement.clientWidth;
+          itemHeight = swipeFrontElement.clientHeight;
           slopValue = itemWidth * (1/4);
+          slopVerticalValue = itemHeight * (1/4);
         };
 
         /* // [START handle-start-gesture] */
@@ -295,10 +300,13 @@
 
         function updateSwipeRestPosition() {
           var differenceInX = initialTouchPos.x - lastTouchPos.x;
+          var differenceInY = initialTouchPos.y - lastTouchPos.y;
           currentXPosition = currentXPosition - differenceInX;
+          currentYPosition = currentYPosition - differenceInY;
 
           // Go to the default state and change
           var newState = STATE_DEFAULT;
+          var newVerticalState = STATE_VERTICAL_DEFAULT;
 
           // Check if we need to change state to left or right based on slop value
           if(Math.abs(differenceInX) > slopValue) {
@@ -319,12 +327,30 @@
             newState = currentState;
           }
 
-          changeState(newState);
+          if(Math.abs(differenceInY) > slopVerticalValue){
+            if(currentVerticalState === STATE_VERTICAL_DEFAULT) {
+              if(differenceInY > 0){
+                newVerticalState = STATE_VERTICAL_TOP;
+              } else {
+                newVerticalState = STATE_VERTICAL_BOTTOM;
+              }
+            } else {
+              if(currentVerticalState === STATE_VERTICAL_TOP && differenceInY > 0){
+                newVerticalState = STATE_VERTICAL_DEFAULT;
+              } else if(currentVerticalState === STATE_VERTICAL_BOTTOM && differenceInY < 0){
+                newVerticalState = STATE_VERTICAL_DEFAULT;
+              }
+            }
+          }else {
+            newVerticalState = currentVerticalState;
+          }
+
+          changeState(newState,newVerticalState);
 
           swipeFrontElement.style.transition = 'all 150ms ease-out';
         }
 
-        function changeState(newState) {
+        function changeState(newState, newVerticalState) {
           var transformStyle;
           switch(newState) {
             case STATE_DEFAULT:
@@ -337,8 +363,19 @@
               currentXPosition = itemWidth - handleSize;
               break;
           }
+          switch(newVerticalState) {
+            case STATE_VERTICAL_DEFAULT:
+              currentYPosition = 0;
+              break;
+            case STATE_VERTICAL_TOP:
+              currentYPosition = -(itemHeight - handleSize);
+              break;
+            case STATE_VERTICAL_BOTTOM:
+              currentYPosition = itemHeight - handleSize;
+              break;
+          }
 
-          transformStyle = 'translateX('+currentXPosition+'px)';
+          transformStyle = 'translate('+currentXPosition+'px,'+ currentYPosition+'px)';
 
           swipeFrontElement.style.msTransform = transformStyle;
           swipeFrontElement.style.MozTransform = transformStyle;
@@ -346,6 +383,7 @@
           swipeFrontElement.style.transform = transformStyle;
 
           currentState = newState;
+          currentVerticalState = newVerticalState;
         }
 
         function getGesturePointFromEvent(evt) {
