@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Page Reassembler</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Add some specific styles for this tool */
+        #pages-container {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .page-selection {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .page-selection canvas {
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #main-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        #main-actions button {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <h1>PDF Page Reassembler</h1>
+            <p>Upload a PDF, select the pages you want in your new file, and click "Reassemble & Download".</p>
+        </header>
+
+        <input type="file" id="pdf-upload" accept="application/pdf">
+        
+        <div id="pages-container">
+            <!-- Page selection checkboxes will be inserted here by JavaScript -->
+        </div>
+
+        <div id="main-actions" style="display: none;">
+            <button id="view-pdf-btn">View Original PDF</button>
+            <button id="reassemble-btn">Reassemble & Download</button>
+        </div>
+    </main>
+
+    <!-- Include the pdf-lib library -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <!-- Include the pdf.js library for rendering previews -->
+    <script type="module">
+        import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.mjs';
+
+        // 2. Set the Worker to match the EXACT same version (4.9.155)
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs';
+
+        // Your rendering code continues here...
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const { PDFDocument } = PDFLib;
+            const { pdfjsLib } = window;
+    
+        const pdfUpload = document.getElementById('pdf-upload');
+        const pagesContainer = document.getElementById('pages-container');
+        const reassembleBtn = document.getElementById('reassemble-btn');
+        const mainActions = document.getElementById('main-actions');
+        const viewPdfBtn = document.getElementById('view-pdf-btn');
+
+        let loadedPdfDoc = null;
+        let loadedPdfjsDoc = null;
+        let pdfFileUrl = null;
+
+        async function renderAllPages() {
+            if (!loadedPdfjsDoc) return;
+
+            pagesContainer.innerHTML = 'Loading previews...';
+            
+            const pagePromises = [];
+            for (let i = 0; i < loadedPdfjsDoc.numPages; i++) {
+                pagePromises.push(createPageElement(i));
+            }
+
+            const pageElements = await Promise.all(pagePromises);
+            const fragment = document.createDocumentFragment();
+            pageElements.forEach(pageElement => {
+                fragment.appendChild(pageElement);
+            });
+            pagesContainer.innerHTML = '';
+            pagesContainer.appendChild(fragment);
+        }
+
+        async function createPageElement(pageIndex) {
+            const page = await loadedPdfjsDoc.getPage(pageIndex + 1);
+            const viewport = page.getViewport({ scale: 1.2 });
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+            const pageSelectionDiv = document.createElement('div');
+            pageSelectionDiv.className = 'page-selection';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `page-${pageIndex}`;
+            checkbox.dataset.pageIndex = pageIndex;
+
+            const label = document.createElement('label');
+            label.htmlFor = `page-${pageIndex}`;
+            label.textContent = ` Page ${pageIndex + 1}`;
+
+            pageSelectionDiv.appendChild(canvas);
+            const checkboxContainer = document.createElement('div');
+            checkboxContainer.appendChild(checkbox);
+            checkboxContainer.appendChild(label);
+            pageSelectionDiv.appendChild(checkboxContainer);
+            
+            return pageSelectionDiv;
+        }
+
+        pdfUpload.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                if (pdfFileUrl) {
+                    URL.revokeObjectURL(pdfFileUrl);
+                }
+                pdfFileUrl = URL.createObjectURL(file);
+
+                pagesContainer.innerHTML = 'Loading PDF...';
+                mainActions.style.display = 'none';
+
+                try {
+                    const uploadedPdfBytes = await file.arrayBuffer();
+                    
+                    // Load with both libraries
+                    const pdfjsPromise = pdfjsLib.getDocument({ data: uploadedPdfBytes.slice(0) }).promise;
+                    const pdfLibPromise = PDFDocument.load(uploadedPdfBytes);
+
+                    [loadedPdfjsDoc, loadedPdfDoc] = await Promise.all([pdfjsPromise, pdfLibPromise]);
+
+                    await renderAllPages();
+                    
+                    mainActions.style.display = 'flex';
+                } catch (error) {
+                    console.error('Error loading PDF:', error);
+                    pagesContainer.innerHTML = 'Failed to load PDF. The file might be corrupted or invalid.';
+                    alert('Could not load the PDF. Please try another file.');
+                }
+            }
+        });
+
+        viewPdfBtn.addEventListener('click', () => {
+            if (pdfFileUrl) {
+                window.open(pdfFileUrl, '_blank');
+            }
+        });
+
+        reassembleBtn.addEventListener('click', async () => {
+            if (!loadedPdfDoc) return;
+
+            const selectedPageIndexes = Array.from(pagesContainer.querySelectorAll('input:checked'))
+                .map(cb => parseInt(cb.dataset.pageIndex, 10));
+
+            if (selectedPageIndexes.length === 0) {
+                alert('Please select at least one page.');
+                return;
+            }
+
+            const newPdfDoc = await PDFDocument.create();
+            const copiedPages = await newPdfDoc.copyPages(loadedPdfDoc, selectedPageIndexes);
+            copiedPages.forEach(page => newPdfDoc.addPage(page));
+
+            const newPdfBytes = await newPdfDoc.save();
+            const blob = new Blob([newPdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'reassembled.pdf';
+            link.click();
+        });    
+    });
+    </script>
+</body>
+</html>
