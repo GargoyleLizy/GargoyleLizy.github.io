@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Page Reassembler</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        #pages-container { margin-top: 20px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+        .page-selection { border:1px solid #ccc; padding:10px; border-radius:5px; display:flex; flex-direction:column; align-items:center; }
+        .page-selection canvas { border:1px solid #ddd; margin-bottom:5px; }
+        #main-actions { margin-top:20px; display:flex; gap:10px; justify-content:center; }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <h1>PDF Page Reassembler</h1>
+            <p>Upload a PDF, select pages, then click "Reassemble & Download".</p>
+        </header>
+
+        <input type="file" id="pdf-upload" accept="application/pdf">
+        <div id="pages-container"></div>
+
+        <div id="main-actions" style="display:none;">
+            <button id="view-pdf-btn">View Original PDF</button>
+            <button id="reassemble-btn">Reassemble & Download</button>
+        </div>
+    </main>
+
+    <!-- pdf-lib (global) -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+    <!-- App entry (module) -->
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

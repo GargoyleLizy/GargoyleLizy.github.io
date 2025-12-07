@@ -71,6 +71,9 @@
         // 2. Set the Worker to match the EXACT same version (4.9.155)
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs';
 
+        // Expose pdfjsLib to the non-module script that runs below
+        window.pdfjsLib = pdfjsLib;
+
         // Your rendering code continues here...
     </script>
 
@@ -155,7 +158,8 @@
                     const uploadedPdfBytes = await file.arrayBuffer();
                     
                     // Load with both libraries
-                    const pdfjsPromise = pdfjsLib.getDocument({ data: uploadedPdfBytes.slice(0) }).promise;
+                    // pass the ArrayBuffer directly to pdf.js
+                    const pdfjsPromise = pdfjsLib.getDocument({ data: uploadedPdfBytes }).promise;
                     const pdfLibPromise = PDFDocument.load(uploadedPdfBytes);
 
                     [loadedPdfjsDoc, loadedPdfDoc] = await Promise.all([pdfjsPromise, pdfLibPromise]);
@@ -197,7 +201,14 @@
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'reassembled.pdf';
+            // append and click so some browsers respect the download, then revoke the blob URL
+            document.body.appendChild(link);
+            link.style.display = 'none';
             link.click();
+            setTimeout(() => {
+                URL.revokeObjectURL(link.href);
+                link.remove();
+            }, 1500);
         });    
     });
     </script>
