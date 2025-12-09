@@ -14,11 +14,9 @@ export class PdfService {
         this.PDFLib = window.PDFLib; // global provided by script tag
         this.pdfjsDoc = null;
         this.pdfLibDoc = null;
-        this.arrayBuffer = null;
     }
 
     async loadFromArrayBuffer(arrayBuffer) {
-        this.arrayBuffer = arrayBuffer;
         const pdfjsPromise = this.pdfjs.getDocument({ data: arrayBuffer }).promise;
         const pdfLibPromise = this.PDFLib.PDFDocument.load(arrayBuffer);
         [this.pdfjsDoc, this.pdfLibDoc] = await Promise.all([pdfjsPromise, pdfLibPromise]);

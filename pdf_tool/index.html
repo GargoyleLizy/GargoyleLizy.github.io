@@ -4,13 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Page Reassembler</title>
-    <link rel="stylesheet" href="../style.css">
-    <style>
-        #pages-container { margin-top: 20px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
-        .page-selection { border:1px solid #ccc; padding:10px; border-radius:5px; display:flex; flex-direction:column; align-items:center; }
-        .page-selection canvas { border:1px solid #ddd; margin-bottom:5px; }
-        #main-actions { margin-top:20px; display:flex; gap:10px; justify-content:center; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <main>
@@ -21,6 +15,12 @@
 
         <input type="file" id="pdf-upload" accept="application/pdf">
         <div id="pages-container"></div>
+
+        <div id="pagination-controls" style="display:none;">
+            <button id="prev-page-btn">&laquo; Prev</button>
+            <span>Page <input type="number" id="page-num-input" min="1"> of <span id="total-pages">0</span></span>
+            <button id="next-page-btn">Next &raquo;</button>
+        </div>
 
         <div id="main-actions" style="display:none;">
             <button id="view-pdf-btn">View Original PDF</button>
