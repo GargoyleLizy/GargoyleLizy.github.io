@@ -65,9 +65,9 @@
     };
 
     async function deploy() {
-        const token = document.getElementById('pat').value;
-        const user = document.getElementById('user').value;
-        const repo = document.getElementById('repo').value;
+        const token = document.getElementById('pat').value.trim();
+        const user = document.getElementById('user').value.trim();
+        const repo = document.getElementById('repo').value.trim();
         const filename = document.getElementById('filename').value;
         const widgetBody = document.getElementById('code').value;
 
@@ -105,8 +105,8 @@
     }
 
     async function fetchList() {
-        const user = document.getElementById('user').value;
-        const repo = document.getElementById('repo').value;
+        const user = document.getElementById('user').value.trim();
+        const repo = document.getElementById('repo').value.trim();
         const listDiv = document.getElementById('file-list');
 
         try {
@@ -117,7 +117,7 @@
             const htmlFiles = files.filter(f => f.name.endsWith('.html') && f.name !== 'index.html');
             
             listDiv.innerHTML = htmlFiles.map(f => {
-                const url = `https://${user}.github.io/${repo}/linkify_dashboard/${f.name}`;
+                const url = f.html_url;
                 return `
                 <div class="widget-card">
                     <div>
