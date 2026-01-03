@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Linkify Dashboard</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0d1117; color: #c9d1d9; display: grid; grid-template-columns: 360px 1fr; height: 100vh; margin: 0; }
+        .sidebar { background: #161b22; padding: 25px; border-right: 1px solid #30363d; overflow-y: auto; }
+        .main { padding: 40px; overflow-y: auto; background: #0d1117; }
+        input, textarea { width: 100%; margin: 10px 0; padding: 12px; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: white; box-sizing: border-box; }
+        button { width: 100%; background: #238636; color: white; padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .widget-card { background: #1c2128; border: 1px solid #30363d; padding: 18px; border-radius: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .copy-link { font-family: monospace; font-size: 11px; color: #8b949e; background: #0d1117; padding: 4px 8px; border-radius: 4px; display: block; margin-top: 5px; cursor: pointer; }
+        .nav-link { color: #8b949e; text-decoration: none; font-size: 13px; display: inline-block; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <a href="../index.html" class="nav-link">← Return to Home</a>
+    <h3>🛠️ Widget Creator</h3>
+    <input type="password" id="pat" placeholder="GitHub Token (PAT)">
+    <input type="text" id="user" placeholder="GitHub Username">
+    <input type="text" id="repo" placeholder="Repo Name">
+    <hr style="border:0; border-top:1px solid #30363d; margin:20px 0;">
+    <input type="text" id="filename" placeholder="gold-chart.html">
+    <textarea id="code" rows="6" placeholder="Paste TradingView Code Here..."></textarea>
+    <button onclick="deploy()">Deploy to /linkify_dashboard/</button>
+    <p id="status" style="font-size: 12px; color: #7ee787; margin-top: 15px;"></p>
+</div>
+
+<div class="main">
+    <h2>📚 Widget Library</h2>
+    <p>Stored in <code>/linkify_dashboard/</code></p>
+    <div id="file-list">Loading widgets...</div>
+</div>
+
+<script>
+    window.onload = () => {
+        document.getElementById('pat').value = localStorage.getItem('gh_token') || '';
+        document.getElementById('user').value = localStorage.getItem('gh_user') || '';
+        document.getElementById('repo').value = localStorage.getItem('gh_repo') || '';
+        if(localStorage.getItem('gh_user')) fetchList();
+    };
+
+    async function deploy() {
+        const token = document.getElementById('pat').value;
+        const user = document.getElementById('user').value;
+        const repo = document.getElementById('repo').value;
+        const filename = document.getElementById('filename').value;
+        const widgetBody = document.getElementById('code').value;
+
+        localStorage.setItem('gh_token', token);
+        localStorage.setItem('gh_user', user);
+        localStorage.setItem('gh_repo', repo);
+
+        const fullHTML = `<!DOCTYPE html><html><head><style>body{margin:0;background:#000;color:#58a6ff;font-family:sans-serif;}.nav{padding:8px;background:#161b22;border-bottom:1px solid #30363d;font-size:12px;}</style></head><body><div class="nav"><a href="index.html" style="color:inherit;text-decoration:none;">← Back to Dashboard</a></div>${widgetBody}</body></html>`;
+
+        // Path is now specifically linkify_dashboard/
+        const apiUrl = `https://api.github.com/repos/${user}/${repo}/contents/linkify_dashboard/${filename}`;
+        
+        let sha = "";
+        try {
+            const check = await fetch(apiUrl, { headers: {'Authorization': `token ${token}`} });
+            if(check.ok) { const d = await check.json(); sha = d.sha; }
+        } catch(e) {}
+
+        const res = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {'Authorization': `token ${token}`, 'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                message: `New Widget: ${filename}`,
+                content: btoa(unescape(encodeURIComponent(fullHTML))),
+                sha: sha || undefined
+            })
+        });
+
+        if(res.ok) {
+            document.getElementById('status').innerText = "✅ Deployed! Refreshing list...";
+            setTimeout(fetchList, 2000);
+        } else {
+            alert("Error. Ensure PAT has 'repo' permissions.");
+        }
+    }
+
+    async function fetchList() {
+        const user = document.getElementById('user').value;
+        const repo = document.getElementById('repo').value;
+        const listDiv = document.getElementById('file-list');
+
+        try {
+            // Fetch contents of the linkify_dashboard folder
+            const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/linkify_dashboard`);
+            const files = await res.json();
+            
+            const htmlFiles = files.filter(f => f.name.endsWith('.html') && f.name !== 'index.html');
+            
+            listDiv.innerHTML = htmlFiles.map(f => {
+                const url = `https://${user}.github.io/${repo}/linkify_dashboard/${f.name}`;
+                return `
+                <div class="widget-card">
+                    <div>
+                        <strong>${f.name.replace('.html', '')}</strong>
+                        <span class="copy-link" onclick="navigator.clipboard.writeText('${url}'); alert('Link Copied!');">${url}</span>
+                    </div>
+                    <a href="${url}" target="_blank" style="background:#21262d; color:#58a6ff; padding:8px 15px; border-radius:6px; text-decoration:none; font-size:13px;">View</a>
+                </div>`;
+            }).join('');
+        } catch(e) {
+            listDiv.innerHTML = "<p>Ready to scan. Please fill in credentials.</p>";
+        }
+    }
+</script>
+</body>
+</html>

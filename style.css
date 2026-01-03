@@ -13,11 +13,61 @@ main {
   padding: 20px;
   background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   text-align: center;
 }
 
 ul {
   list-style-type: none;
   padding: 0;
+}
+
+.project-card {
+  background: var(--card);
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  padding: 20px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.project-card:hover {
+  transform: translateX(5px);
+  border-color: var(--accent);
+}
+
+.project-card a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1.2rem;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.project-card p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #8b949e;
+}
+
+.badge {
+  display: inline-block;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  margin-top: 10px;
+  color: var(--accent);
+}
+
+.badge-tool {
+  border-color: #7ee787;
+  color: #7ee787;
+}
+
+.badge-legal {
+  border-color: #ffffff;
+  color: #ffffff;
 }
