@@ -89,40 +89,55 @@ export class UIController {
         console.log(`Rendering page number: ${pageNumber}`); // Debugging line
 
         this.currentPage = pageNumber;
-        this.pagesContainerEl.textContent = 'Rendering page...';
 
         const page = await this.pdfService.getPage(pageNumber);
         const canvas = await this.renderer.renderPageToCanvas(page);
-
-        const pageSelectionDiv = document.createElement('div');
-        pageSelectionDiv.className = 'page-selection';
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
         const pageIndex = pageNumber - 1;
-        checkbox.id = `page-${pageIndex}`;
-        checkbox.dataset.pageIndex = String(pageIndex);
-        checkbox.checked = this.selectedPages.has(pageIndex);
-        checkbox.addEventListener('change', (e) => {
-            const idx = parseInt(e.target.dataset.pageIndex, 10);
-            if (e.target.checked) {
-                this.selectedPages.add(idx);
-            } else {
-                this.selectedPages.delete(idx);
-            }
-        });
 
-        const label = document.createElement('label');
-        label.htmlFor = `page-${pageIndex}`;
-        label.textContent = ` Select Page ${pageNumber}`;
+        const existingPageSelectionDiv = this.pagesContainerEl.querySelector('.page-selection');
 
-        pageSelectionDiv.appendChild(canvas);
-        const checkboxContainer = document.createElement('div');
-        checkboxContainer.appendChild(checkbox);
-        checkboxContainer.appendChild(label);
-        pageSelectionDiv.appendChild(checkboxContainer);
+        if (existingPageSelectionDiv) {
+            // Update existing elements to prevent flashing and preserve scroll
+            const existingCanvas = existingPageSelectionDiv.querySelector('canvas');
+            existingCanvas.replaceWith(canvas);
 
-        this.pagesContainerEl.replaceChildren(pageSelectionDiv);
+            const checkbox = existingPageSelectionDiv.querySelector('input[type="checkbox"]');
+            checkbox.id = `page-${pageIndex}`;
+            checkbox.dataset.pageIndex = String(pageIndex);
+            checkbox.checked = this.selectedPages.has(pageIndex);
+
+            const label = existingPageSelectionDiv.querySelector('label');
+            label.htmlFor = `page-${pageIndex}`;
+            label.textContent = ` Select Page ${pageNumber}`;
+        } else {
+            // First render: build the full structure
+            this.pagesContainerEl.textContent = ''; // Clear "Loading..." text
+
+            const pageSelectionDiv = document.createElement('div');
+            pageSelectionDiv.className = 'page-selection';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `page-${pageIndex}`;
+            checkbox.dataset.pageIndex = String(pageIndex);
+            checkbox.checked = this.selectedPages.has(pageIndex);
+            checkbox.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.dataset.pageIndex, 10);
+                e.target.checked ? this.selectedPages.add(idx) : this.selectedPages.delete(idx);
+            });
+
+            const label = document.createElement('label');
+            label.htmlFor = `page-${pageIndex}`;
+            label.textContent = ` Select Page ${pageNumber}`;
+
+            pageSelectionDiv.appendChild(canvas);
+            const checkboxContainer = document.createElement('div');
+            checkboxContainer.appendChild(checkbox);
+            checkboxContainer.appendChild(label);
+            pageSelectionDiv.appendChild(checkboxContainer);
+
+            this.pagesContainerEl.replaceChildren(pageSelectionDiv);
+        }
 
         this.pageNumInputEl.value = pageNumber;
         this.prevPageBtnEl.disabled = pageNumber <= 1;
