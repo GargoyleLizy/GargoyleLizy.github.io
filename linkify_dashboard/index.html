@@ -39,6 +39,8 @@
     <div id="file-list">Loading widgets...</div>
 </div>
 
+<div style="position: fixed; bottom: 10px; right: 15px; font-size: 12px; color: #8b949e; opacity: 0.7; font-family: monospace;">v1.0.1</div>
+
 <script>
     window.onload = () => {
         document.getElementById('pat').value = localStorage.getItem('gh_token') || '';
@@ -81,7 +83,7 @@
         localStorage.setItem('gh_user', user);
         localStorage.setItem('gh_repo', repo);
 
-        const fullHTML = `<!DOCTYPE html><html><head><style>body{margin:0;background:#000;color:#58a6ff;font-family:sans-serif;}.nav{padding:8px;background:#161b22;border-bottom:1px solid #30363d;font-size:12px;}</style></head><body><div class="nav"><a href="index.html" style="color:inherit;text-decoration:none;">← Back to Dashboard</a></div>${widgetBody}</body></html>`;
+        const fullHTML = `<!DOCTYPE html><html><head><style>body{margin:0;background:#000;color:#58a6ff;font-family:sans-serif;}.nav{padding:8px;background:#161b22;border-bottom:1px solid #30363d;font-size:12px;}.container{height:610px;width:980px;margin:20px auto;position:relative;overflow:hidden;border:1px solid #30363d;border-radius:8px;}.container > div, .container > iframe {height:100%;width:100%;border:none;}</style></head><body><div class="nav"><a href="index.html" style="color:inherit;text-decoration:none;">← Back to Dashboard</a></div><div class="container">${widgetBody}</div></body></html>`;
 
         // Path is now specifically linkify_dashboard/
         const apiUrl = `https://api.github.com/repos/${user}/${repo}/contents/linkify_dashboard/${filename}`;
@@ -128,14 +130,20 @@
             }
 
             listDiv.innerHTML = htmlFiles.map(f => {
-                const url = f.html_url;
+                const sourceUrl = f.html_url;
+                // GitHub Pages URL logic: User sites are at root, Project sites are at /repo-name/
+                const isUserSite = repo.toLowerCase() === `${user.toLowerCase()}.github.io`;
+                const embedUrl = `https://${user.toLowerCase()}.github.io${isUserSite ? '' : '/' + repo}/linkify_dashboard/${f.name}`;
                 return `
                 <div class="widget-card">
                     <div>
                         <strong>${f.name.replace('.html', '')}</strong>
-                        <span class="copy-link" onclick="navigator.clipboard.writeText('${url}'); alert('Link Copied!');">${url}</span>
+                        <span class="copy-link" onclick="navigator.clipboard.writeText('${sourceUrl}'); alert('Link Copied!');">${sourceUrl}</span>
                     </div>
-                    <a href="${url}" target="_blank" style="background:#21262d; color:#58a6ff; padding:8px 15px; border-radius:6px; text-decoration:none; font-size:13px;">View</a>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="${sourceUrl}" target="_blank" style="background:#21262d; color:#58a6ff; padding:8px 15px; border-radius:6px; text-decoration:none; font-size:13px;">View Source</a>
+                        <a href="${embedUrl}" target="_blank" style="background:#21262d; color:#58a6ff; padding:8px 15px; border-radius:6px; text-decoration:none; font-size:13px;">Embed View</a>
+                    </div>
                 </div>`;
             }).join('');
         } catch(e) {
