@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-const { deploy, fetchList } = require('./dashboard');
+const { deploy, fetchList, BASE_DIR } = require('./dashboard');
 
 describe('Linkify Dashboard', () => {
     beforeEach(() => {
@@ -36,8 +36,8 @@ describe('Linkify Dashboard', () => {
 
     test('fetchList should call GitHub API and render files', async () => {
         const mockResponse = [
-            { type: 'dir', name: 'subfolder', path: 'linkify_dashboard/subfolder' },
-            { type: 'file', name: 'chart.html', path: 'linkify_dashboard/chart.html', html_url: 'http://github.com/blob/chart.html' }
+            { type: 'dir', name: 'subfolder', path: `${BASE_DIR}/subfolder` },
+            { type: 'file', name: 'chart.html', path: `${BASE_DIR}/chart.html`, html_url: 'http://github.com/blob/chart.html' }
         ];
 
         global.fetch.mockResolvedValue({
@@ -48,7 +48,7 @@ describe('Linkify Dashboard', () => {
         await fetchList('');
 
         expect(global.fetch).toHaveBeenCalledWith(
-            'https://api.github.com/repos/test-user/test-repo/contents/linkify_dashboard'
+            `https://api.github.com/repos/test-user/test-repo/contents/${BASE_DIR}`
         );
 
         const listDiv = document.getElementById('file-list');

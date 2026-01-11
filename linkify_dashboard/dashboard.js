@@ -1,4 +1,4 @@
-const BASE_DIR = 'linkify_dashboard';
+const BASE_DIR = 'linkify_dashboard/widgets_data';
 let currentPath = '';
 
 window.onload = () => {
@@ -39,7 +39,7 @@ async function deploy() {
     const token = document.getElementById('pat').value.trim();
     const user = document.getElementById('user').value.trim();
     const repo = document.getElementById('repo').value.trim();
-    const filename = document.getElementById('filename').value.trim().replace(/^\/+/, '');
+    const filename = document.getElementById('filename').value.trim().replace(/^\/+/, '').replace(/\.\./g, '');
     const widgetBody = document.getElementById('code').value;
 
     if (!token || !user || !repo || !filename) {
@@ -53,9 +53,11 @@ async function deploy() {
 
     const cleanPath = currentPath ? currentPath + '/' : '';
     const fullRelPath = cleanPath + filename;
-    const depth = fullRelPath.split('/').length - 1;
+    // Calculate depth relative to the dashboard file (index.html)
+    // +1 because widgets are in widgets_data/ subdirectory, one level deeper than index.html
+    const depth = fullRelPath.split('/').length + 1;
     
-    let backLink = depth > 0 ? '../'.repeat(depth) + 'index.html' : 'index.html';
+    let backLink = '../'.repeat(depth) + 'index.html';
     // Append the folder path as a hash so the dashboard opens in the correct folder
     const folderPath = fullRelPath.substring(0, fullRelPath.lastIndexOf('/'));
     if (folderPath) {
