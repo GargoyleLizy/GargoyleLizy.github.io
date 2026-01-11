@@ -98,7 +98,13 @@
         const cleanPath = currentPath ? currentPath + '/' : '';
         const fullRelPath = cleanPath + filename;
         const depth = fullRelPath.split('/').length - 1;
-        const backLink = depth > 0 ? '../'.repeat(depth) + 'index.html' : 'index.html';
+        
+        let backLink = depth > 0 ? '../'.repeat(depth) + 'index.html' : 'index.html';
+        // Append the folder path as a hash so the dashboard opens in the correct folder
+        const folderPath = fullRelPath.substring(0, fullRelPath.lastIndexOf('/'));
+        if (folderPath) {
+            backLink += `#${folderPath}`;
+        }
 
         const fullHTML = `<!DOCTYPE html><html><head><style>body{margin:0;background:#000;color:#58a6ff;font-family:sans-serif;}.nav{padding:8px;background:#161b22;border-bottom:1px solid #30363d;font-size:12px;}.container{height:610px;width:980px;margin:20px auto;position:relative;overflow:hidden;border:1px solid #30363d;border-radius:8px;}.container > div, .container > iframe {height:100%;width:100%;border:none;}</style></head><body><div class="nav"><a href="${backLink}" style="color:inherit;text-decoration:none;">← Back to Dashboard</a></div><div class="container">${widgetBody}</div></body></html>`;
 
